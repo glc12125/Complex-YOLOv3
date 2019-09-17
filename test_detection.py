@@ -103,7 +103,7 @@ if __name__ == "__main__":
     # Set up model
     model = Darknet(opt.model_def, img_size=opt.img_size).to(device)
     # Load checkpoint weights
-    model.load_state_dict(torch.load(opt.weights_path))
+    model.load_state_dict(torch.load(opt.weights_path, map_location=torch.device('cpu')))
     # Eval mode
     model.eval()
     
@@ -124,7 +124,7 @@ if __name__ == "__main__":
             detections = utils.non_max_suppression_rotated_bbox(detections, opt.conf_thres, opt.nms_thres) 
         
         end_time = time.time()
-        print(f"FPS: {(1.0/(end_time-start_time)):0.2f}")
+        print("FPS: ({})".format(1.0/(end_time-start_time)))
         start_time = end_time
 
         img_detections = []  # Stores detections for each image index
