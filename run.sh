@@ -1,0 +1,1 @@
+python3 test_detection.py --split=samples --folder=sampledata

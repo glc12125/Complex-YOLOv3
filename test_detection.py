@@ -23,16 +23,18 @@ def predictions_to_kitti_format(img_detections, calib, img_shape_2d, img_size, R
     for detections in img_detections:
         if detections is None:
             continue
+        print("detections: {}".format(detections))
         # Rescale boxes to original image
         for x, y, w, l, im, re, conf, cls_conf, cls_pred in detections:
             yaw = np.arctan2(im, re)
             predictions[count, :] = cls_pred, x/img_size, y/img_size, w/img_size, l/img_size, im, re
             count += 1
-
+    print("detections before inverse_yolo_target: {}".format(predictions))
     predictions = bev_utils.inverse_yolo_target(predictions, cnf.boundary)
+    print("detections after inverse_yolo_target(before lidar_to_camera_box): {}".format(predictions))
     if predictions.shape[0]:
         predictions[:, 1:] = aug_utils.lidar_to_camera_box(predictions[:, 1:], calib.V2C, calib.R0, calib.P)
-
+    print("detections after lidar_to_camera_box: {}".format(predictions))
     objects_new = []
     corners3d = []
     for index, l in enumerate(predictions):
@@ -52,7 +54,7 @@ def predictions_to_kitti_format(img_detections, calib, img_shape_2d, img_size, R
         _, corners_3d = kitti_utils.compute_box_3d(obj, calib.P)
         corners3d.append(corners_3d)
         objects_new.append(obj)
-
+    print("corners3d after compute_box_3d: {}".format(corners3d))
     if len(corners3d) > 0:
         corners3d = np.array(corners3d)
         img_boxes, _ = calib.corners3d_to_img_boxes(corners3d)
@@ -73,7 +75,7 @@ def predictions_to_kitti_format(img_detections, calib, img_shape_2d, img_size, R
 
         obj.alpha = alpha
         obj.box2d = img_boxes[i, :]
-
+    print("objects_new before RGB_MAP draw: {}".format(objects_new))
     if RGB_Map is not None:
         labels, noObjectLabels = kitti_utils.read_labels_for_bevbox(objects_new)    
         if not noObjectLabels:
@@ -81,7 +83,7 @@ def predictions_to_kitti_format(img_detections, calib, img_shape_2d, img_size, R
 
         target = bev_utils.build_yolo_target(labels)
         utils.draw_box_in_bev(RGB_Map, target)
-
+    print("objects_new after RGB_MAP draw: {}".format(objects_new))
     return objects_new
 
 if __name__ == "__main__":
@@ -143,9 +145,10 @@ if __name__ == "__main__":
         for detections in img_detections:
             if detections is None:
                 continue
-
+            print("detections before rescaling: {}".format(detections))
             # Rescale boxes to original image
             detections = utils.rescale_boxes(detections, opt.img_size, RGB_Map.shape[:2])
+            print("detections after rescaling: {}".format(detections))
             for x, y, w, l, im, re, conf, cls_conf, cls_pred in detections:
                 yaw = np.arctan2(im, re)
                 # Draw rotated box
